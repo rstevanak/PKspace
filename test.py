@@ -28,25 +28,15 @@ def rotate_about_center(src, angle, scale=1.):
 # cv2.imshow("cely", cely)
 # otoceny=rotate_about_center(cely,-71)
 # cv2.imshow("otoceny",otoceny)
-miesto=[]
+percent=0
+counter=0
 for subor in glob.glob(os.path.join(os.getcwd() + '\meh', '*.jpg')):
-    novemiesto={}
     cely = cv2.imread(subor)
     e = xml.etree.ElementTree.parse(subor[:-4] + '.xml')
     root = e.getroot()
     cv2.imshow("cely", cely)
     for space in root:
-        novemiesto[space.get('id')]={}
-        novemiesto[space.get('id')]['rot']=[]
-        for i in range(3):
-            novemiesto.get(space.get('id'),0).get('rot').append(space[0][i].attrib)
-        obrys = []
-        for i in range(4):
-            obrys.append([int(space[1][i].get('x')), int(space[1][i].get('y'))])
-        novemiesto[space.get('id')]['obrys']=obrys
-        if miesto !=novemiesto:
-            print("nezhoda pred ", space.get('id'))
-            print(miesto)
-            print(novemiesto)
-        miesto=novemiesto
-    cv2.waitKey(0)
+        counter+=1
+        if space.get('occupied')=='1':
+            percent+=1
+print(percent/counter*100)
