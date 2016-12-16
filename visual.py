@@ -5,9 +5,9 @@ import cv2
 import xml.etree.ElementTree
 
 
-def visualizefrommeh(answered):
+def visualizefrom(folder,answered):
     counter=-1
-    for file in glob.glob(os.path.join(os.getcwd() + '\meh', '*.jpg')):
+    for file in glob.glob(os.path.join(os.getcwd() + '\\'+folder, '*.jpg')):
         img = cv2.imread(file)
         e = xml.etree.ElementTree.parse(file[:-4] + '.xml')
         root = e.getroot()
@@ -27,11 +27,11 @@ def visualizefrommeh(answered):
 
             center = int(space[0][0].get('x')), int(space[0][0].get('y'))
 
-            centercolor = (0, 0, 255) if int(space.get('occupied', 0)) else(0, 255, 0)
-            cv2.circle(img, center, 2, centercolor, -1)
-
             if answered.get(counter):
-                contourcolor = (0, 0, 255) if int(answered.get(counter, 0)) else(0, 255, 0)
+                if not int(space.get('occupied')) == int(answered.get(counter)):
+                    centercolor =(0, 0, 255)
+                    cv2.circle(img, center, 2, centercolor, -1)
+                contourcolor = (0, 0, 255) if answered.get(counter)=="1" else(0, 255, 0)
             else:
                 contourcolor = (0, 255, 255)
             pts = np.array(contour, np.int32)
