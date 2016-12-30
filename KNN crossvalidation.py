@@ -1,9 +1,9 @@
 import numpy as np
 from sklearn.neighbors import KNeighborsClassifier
-import nacitanie
+import loading
 from sklearn.model_selection import KFold
 
-dataset, answers = nacitanie.loadfrom("meh")
+dataset, answers = loading.loadfrom("meh")
 folds=5
 rightstat=0
 allstat=0

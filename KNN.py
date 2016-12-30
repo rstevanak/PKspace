@@ -1,24 +1,36 @@
 import numpy as np
 from sklearn.neighbors import KNeighborsClassifier
-import nacitanie
+import loading
 import visual
 
-dataset, answers = nacitanie.loadfrom("meh")
-testsize = 10
-np.random.seed(0)
+folder="UFPR04"
+dataset, answers = loading.loadfrom(folder)
+trainsize = int(np.ceil(len(dataset)/10))
+#np.random.seed(0)
 indices = np.random.permutation(len(dataset))
-dataset_train = dataset[indices[:-testsize]]
-answers_train = answers[indices[:-testsize]]
-dataset_test = dataset[indices[-testsize:]]
-answers_test = answers[indices[-testsize:]]
+dataset_train = dataset[indices[:trainsize]]
+answers_train = answers[indices[:trainsize]]
+dataset_test = dataset[indices[:-trainsize]]
+answers_test = answers[indices[:-trainsize]]
 
+print("Training")
 knn = KNeighborsClassifier().fit(dataset_train, answers_train)
+print("Predicting")
 answers_predicted = knn.predict(dataset_test)
-rightans = 0
-for i in range(testsize):
+
+truepositive = 0
+for i in range(len(answers_test)):
     if answers_test[i] == answers_predicted[i]:
-        rightans += 1
-print("There is {}% accuracy with {} samples from dataset {} samples big".
-      format(rightans / testsize * 100, testsize, len(indices) - testsize))
-allpredicted=dict(zip(indices[-testsize:], answers_predicted))
-visual.visualizefrom("meh",allpredicted)
+        truepositive += 1
+falsepositive=np.count_nonzero(answers_predicted)-truepositive
+falsenegative=np.count_nonzero(answers_test)-truepositive
+precision=truepositive/(truepositive+falsepositive)
+recall=truepositive/(truepositive+falsenegative)
+
+print("{3} KNN There is {0:.3f}% accuracy with {1} samples trained on {2} samples".
+      format(truepositive / len(answers_test) * 100, len(answers_test), trainsize,folder))
+print("Precision: {} Recall: {}".format(precision,recall))
+print("F1 is {}".format(2*(precision*recall)/(precision+recall)))
+
+allpredicted = dict(zip(indices[:-trainsize], answers_predicted))
+visual.visualizefrom(folder, allpredicted)
