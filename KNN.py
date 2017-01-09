@@ -3,7 +3,7 @@ from sklearn.neighbors import KNeighborsClassifier
 import loading
 import visual
 
-folder="UFPR04"
+folder="PUCPR"
 dataset, answers = loading.loadfrom(folder)
 trainsize = int(np.ceil(len(dataset)/10))
 #np.random.seed(0)
@@ -19,11 +19,14 @@ print("Predicting")
 answers_predicted = knn.predict(dataset_test)
 
 truepositive = 0
+falsepositive,falsenegative=0,0
 for i in range(len(answers_test)):
     if answers_test[i] == answers_predicted[i]:
         truepositive += 1
-falsepositive=np.count_nonzero(answers_predicted)-truepositive
-falsenegative=np.count_nonzero(answers_test)-truepositive
+    elif answers_predicted[i]=='1':
+        falsepositive+=1
+    else:
+        falsenegative+=1
 precision=truepositive/(truepositive+falsepositive)
 recall=truepositive/(truepositive+falsenegative)
 
@@ -33,4 +36,4 @@ print("Precision: {} Recall: {}".format(precision,recall))
 print("F1 is {}".format(2*(precision*recall)/(precision+recall)))
 
 allpredicted = dict(zip(indices[:-trainsize], answers_predicted))
-visual.visualizefrom(folder, allpredicted)
+#visual.visualizefrom(folder, allpredicted)
