@@ -3,6 +3,10 @@ import cv2
 import xml.etree.ElementTree
 import os
 import glob
+import json
+
+import sys
+
 
 def getparkingspaces(src, tabroot):
     finsize = (80, 80)
@@ -44,30 +48,64 @@ def getparkingspaces2(src, tabroot):
     return allspaces, answers
 
 
-def loadfrom(folder):
-    if os.path.exists(os.path.join(os.getcwd()+"\\"+folder+"\\saved.npz")):
-        with open(os.path.join(os.getcwd()+"\\"+folder+"\\saved.npz"),'rb') as f:
+def getadmanspaces(src, desc):
+    finsize = (80, 80)
+    allspaces = []
+    answers = []
+    for space in desc.get('spots'):
+        points=space.get('points')
+        angle=space.get('rotation')
+        xsum,ysum=0,0
+        for x,y in points:
+            xsum+=x
+            ysum+=y
+        center = np.ceil(xsum/len(points)),np.ceil(ysum/len(points))
+        minx,miny=sys.maxsize,sys.maxsize
+        maxx,maxy=0,0
+        for x,y in points:
+            xrotated=((x - center[0]) * np.math.cos(angle)) - ((y - center[1]) * np.sin(angle)) + center[0]
+            yrotated=((x - center[0]) * np.math.sin(angle)) + ((y - center[1]) * np.cos(angle)) + center[1]
+            minx, miny = max(min(minx, int(xrotated)), 0), max(min(miny, int(yrotated)), 0)
+            maxx, maxy = max(maxx, int(xrotated)), max(maxy, int(yrotated))
+        M = cv2.getRotationMatrix2D(center, angle, 1)
+        rows, cols, tmp = src.shape
+        rotated = cv2.warpAffine(src, M, (cols, rows))
+        roi = rotated[minx:maxx, miny:maxy]
+        fin = cv2.resize(roi, finsize).flatten()
+        allspaces.append(fin)
+
+        answers.append(space.get('occupied', -1))
+    return allspaces, answers
+
+
+def loadfrom(folder,adman=False):
+    if os.path.exists(os.path.join(os.path.curdir,folder,"saved.npz")):
+        with open(os.path.join(os.path.curdir,folder,"saved.npz"),'rb') as f:
             loaded=np.load(f)
             allparkinglots, allanswers=loaded['arr_0'],loaded['arr_1']
         return allparkinglots,allanswers
     allparkinglots = []
     allanswers = []
-    for file in glob.glob(os.path.join(os.getcwd() + '\\' + folder, '*.jpg')):
+    for file in glob.glob(os.path.join(os.path.curdir, folder, '*.jpg')):
         img = cv2.imread(file)
-        e = xml.etree.ElementTree.parse(file[:-4] + '.xml')
-        root = e.getroot()
-        spaces, answers = getparkingspaces2(img, root)
+        if adman:
+            desc=json.load(file[:-4] + '.json')
+            spaces,answers = getadmanspaces(img, desc)
+        else:
+            e = xml.etree.ElementTree.parse(file[:-4] + '.xml')
+            root = e.getroot()
+            spaces, answers = getparkingspaces2(img, root)
         allparkinglots += spaces
         allanswers += answers
     allparkinglots = np.array(allparkinglots)
     allanswers = np.array(allanswers)
-    with open(os.path.join(os.getcwd()+"\\"+folder+"\\saved.npz"),'wb') as f:
+    with open(os.path.join(os.path.curdir,folder,"saved.npz"),'wb') as f:
         np.savez(f,allparkinglots,allanswers)
     return allparkinglots, allanswers
 
 
 def rate(folder):
-    for file in glob.glob(os.path.join(os.getcwd() + '\\' + folder, '*.jpg')):
+    for file in glob.glob(os.path.join(os.getcwd(),folder, '*.jpg')):
         img = cv2.imread(file)
         e = xml.etree.ElementTree.parse(file[:-4] + '.xml')
         root = e.getroot()
